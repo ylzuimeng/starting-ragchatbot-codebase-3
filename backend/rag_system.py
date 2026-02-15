@@ -15,8 +15,19 @@ class RAGSystem:
         
         # Initialize core components
         self.document_processor = DocumentProcessor(config.CHUNK_SIZE, config.CHUNK_OVERLAP)
-        self.vector_store = VectorStore(config.CHROMA_PATH, config.EMBEDDING_MODEL, config.MAX_RESULTS)
-        self.ai_generator = AIGenerator(config.ANTHROPIC_API_KEY, config.ANTHROPIC_MODEL)
+        self.vector_store = VectorStore(
+            config.CHROMA_PATH,
+            embedding_model=None,  # No longer used
+            max_results=config.MAX_RESULTS,
+            zhipuai_api_key=config.ZHIPUAI_API_KEY
+        )
+        # Initialize AI generator with optional custom base URL
+        anthropic_base_url = config.ANTHROPIC_BASE_URL if config.ANTHROPIC_BASE_URL else None
+        self.ai_generator = AIGenerator(
+            config.ANTHROPIC_API_KEY,
+            config.ANTHROPIC_MODEL,
+            base_url=anthropic_base_url
+        )
         self.session_manager = SessionManager(config.MAX_HISTORY)
         
         # Initialize search tools

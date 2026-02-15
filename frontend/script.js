@@ -3,23 +3,105 @@ const API_URL = '/api';
 
 // Global state
 let currentSessionId = null;
+let authToken = null;
+let currentUser = null;
 
 // DOM elements
 let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication first
+    checkAuth();
+
     // Get DOM elements after page loads
     chatMessages = document.getElementById('chatMessages');
     chatInput = document.getElementById('chatInput');
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+
     setupEventListeners();
     createNewSession();
     loadCourseStats();
 });
+
+// Check authentication
+function checkAuth() {
+    authToken = localStorage.getItem('token');
+    currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+
+    if (!authToken || !currentUser) {
+        // Not logged in, redirect to login
+        if (window.location.pathname !== '/login.html') {
+            window.location.href = '/login.html';
+        }
+        return false;
+    }
+
+    // Logged in, setup UI
+    const usernameEl = document.getElementById('username');
+    if (usernameEl) {
+        usernameEl.textContent = currentUser.username;
+    }
+
+    // Setup logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    return true;
+}
+
+// Handle logout
+async function handleLogout() {
+    // 显示确认对话框
+    const confirmed = confirm('确定要退出登录吗？');
+
+    if (!confirmed) {
+        return; // 用户取消
+    }
+
+    try {
+        await fetch(`${API_URL}/api/auth/logout`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    authToken = null;
+    currentUser = null;
+    currentSessionId = null;
+
+    window.location.href = '/login.html';
+}
+
+// Make authenticated API call
+async function authenticatedFetch(url, options = {}) {
+    const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${authToken}`
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+        throw new Error('Session expired');
+    }
+
+    return response;
+}
 
 // Event Listeners
 function setupEventListeners() {
@@ -28,8 +110,8 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -60,7 +142,7 @@ async function sendMessage() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-        const response = await fetch(`${API_URL}/query`, {
+        const response = await authenticatedFetch(`${API_URL}/query`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -74,7 +156,7 @@ async function sendMessage() {
         if (!response.ok) throw new Error('Query failed');
 
         const data = await response.json();
-        
+
         // Update session ID if new
         if (!currentSessionId) {
             currentSessionId = data.session_id;
@@ -87,7 +169,7 @@ async function sendMessage() {
     } catch (error) {
         // Replace loading message with error
         loadingMessage.remove();
-        addMessage(`Error: ${error.message}`, 'assistant');
+        addMessage(`错误: ${error.message}`, 'assistant');
     } finally {
         chatInput.disabled = false;
         sendButton.disabled = false;
@@ -115,25 +197,25 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}${isWelcome ? ' welcome-message' : ''}`;
     messageDiv.id = `message-${messageId}`;
-    
+
     // Convert markdown to HTML for assistant messages
     const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
-    
+
     let html = `<div class="message-content">${displayContent}</div>`;
-    
+
     if (sources && sources.length > 0) {
         html += `
             <details class="sources-collapsible">
-                <summary class="sources-header">Sources</summary>
+                <summary class="sources-header">来源</summary>
                 <div class="sources-content">${sources.join(', ')}</div>
             </details>
         `;
     }
-    
+
     messageDiv.innerHTML = html;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     return messageId;
 }
 
@@ -144,29 +226,27 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Removed removeMessage function - no longer needed since we handle loading differently
-
 async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
-    addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+    addMessage('欢迎使用 RAG 课程助手！我可以帮您回答关于课程、课程内容和具体内容的问题。您想了解什么？', 'assistant', null, true);
 }
 
 // Load course statistics
 async function loadCourseStats() {
     try {
         console.log('Loading course stats...');
-        const response = await fetch(`${API_URL}/courses`);
+        const response = await authenticatedFetch(`${API_URL}/courses`);
         if (!response.ok) throw new Error('Failed to load course stats');
-        
+
         const data = await response.json();
         console.log('Course data received:', data);
-        
+
         // Update stats in UI
         if (totalCourses) {
             totalCourses.textContent = data.total_courses;
         }
-        
+
         // Update course titles
         if (courseTitles) {
             if (data.course_titles && data.course_titles.length > 0) {
@@ -174,10 +254,10 @@ async function loadCourseStats() {
                     .map(title => `<div class="course-title-item">${title}</div>`)
                     .join('');
             } else {
-                courseTitles.innerHTML = '<span class="no-courses">No courses available</span>';
+                courseTitles.innerHTML = '<span class="no-courses">暂无课程</span>';
             }
         }
-        
+
     } catch (error) {
         console.error('Error loading course stats:', error);
         // Set default values on error
@@ -185,7 +265,7 @@ async function loadCourseStats() {
             totalCourses.textContent = '0';
         }
         if (courseTitles) {
-            courseTitles.innerHTML = '<span class="error">Failed to load courses</span>';
+            courseTitles.innerHTML = '<span class="error">加载课程失败</span>';
         }
     }
 }

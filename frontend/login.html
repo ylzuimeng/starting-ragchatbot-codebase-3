@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - RAG课程助手</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <!-- 已登录提示 -->
+        <div id="alreadyLoggedIn" style="display: none;" class="login-info-box">
+            <h2>您已登录</h2>
+            <p>检测到您已经登录，是否要进入主页？</p>
+            <button id="goToHome" class="btn-primary">进入主页</button>
+            <button id="loginAsDifferent" class="btn-secondary">登录其他账号</button>
+        </div>
+
+        <div class="login-box" id="loginBox">
+
+            <!-- 登录表单 -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">用户名</label>
+                    <input type="text" id="loginUsername" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">密码</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary">登录</button>
+                <p class="switch-form">
+                    没有账号？<a href="#" id="showRegister">注册</a>
+                </p>
+            </form>
+
+            <!-- 注册表单 -->
+            <form id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <label for="regUsername">用户名</label>
+                    <input type="text" id="regUsername" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">邮箱</label>
+                    <input type="email" id="regEmail" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">密码</label>
+                    <input type="password" id="regPassword" required minlength="8" autocomplete="new-password">
+                    <small class="help-text">密码至少8个字符</small>
+                </div>
+                <div class="form-group">
+                    <label for="regPasswordConfirm">确认密码</label>
+                    <input type="password" id="regPasswordConfirm" required minlength="8" autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn-primary">注册</button>
+                <p class="switch-form">
+                    已有账号？<a href="#" id="showLogin">登录</a>
+                </p>
+            </form>
+
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>

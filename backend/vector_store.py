@@ -3,7 +3,6 @@ from chromadb.config import Settings
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from models import Course, CourseChunk
-from sentence_transformers import SentenceTransformer
 
 @dataclass
 class SearchResults:
@@ -33,20 +32,23 @@ class SearchResults:
 
 class VectorStore:
     """Vector storage using ChromaDB for course content and metadata"""
-    
-    def __init__(self, chroma_path: str, embedding_model: str, max_results: int = 5):
+
+    def __init__(self, chroma_path: str, embedding_model: Optional[str] = None,
+                 max_results: int = 5, zhipuai_api_key: Optional[str] = None):
         self.max_results = max_results
         # Initialize ChromaDB client
         self.client = chromadb.PersistentClient(
             path=chroma_path,
             settings=Settings(anonymized_telemetry=False)
         )
-        
-        # Set up sentence transformer embedding function
-        self.embedding_function = chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=embedding_model
+
+        # Set up ZhipuAI embedding function
+        from zhipu_embedding_function import ZhipuEmbeddingFunction
+        self.embedding_function = ZhipuEmbeddingFunction(
+            api_key=zhipuai_api_key,
+            model_name="embedding-3"
         )
-        
+
         # Create collections for different types of data
         self.course_catalog = self._create_collection("course_catalog")  # Course titles/instructors
         self.course_content = self._create_collection("course_content")  # Actual course material

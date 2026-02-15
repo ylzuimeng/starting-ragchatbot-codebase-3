@@ -46,13 +46,19 @@ body {
     padding: 0;
 }
 
-/* Header - Hidden */
+/* Header */
 header {
-    display: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface);
+    margin-bottom: 20px;
 }
 
-header h1 {
-    font-size: 1.75rem;
+.header-left h1 {
+    font-size: 1.5rem;
     font-weight: 700;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
@@ -61,10 +67,10 @@ header h1 {
     margin: 0;
 }
 
-.subtitle {
-    font-size: 0.95rem;
+.header-left .subtitle {
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 /* Main Content Area with Sidebar */
@@ -715,4 +721,279 @@ details[open] .suggested-header::before {
     .sidebar {
         width: 280px;
     }
+}
+
+/* ========================================
+   Login Page Styles
+   ======================================== */
+
+body.login-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    overflow: auto;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.login-box {
+    background: white;
+    border-radius: 10px;
+    padding: 40px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.login-box h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+    font-size: 28px;
+}
+
+.login-box .form-group {
+    margin-bottom: 20px;
+}
+
+.login-box label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.login-box input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.login-box .help-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #888;
+}
+
+.login-box button.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 10px;
+}
+
+.login-box button.btn-primary:hover {
+    background: #5568d3;
+}
+
+.login-box button.btn-primary:active {
+    background: #4c5cb8;
+}
+
+.login-box .switch-form {
+    text-align: center;
+    margin-top: 15px;
+    color: #666;
+    font-size: 14px;
+}
+
+.login-box .switch-form a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.login-box .switch-form a:hover {
+    text-decoration: underline;
+}
+
+.login-box .error-message,
+.login-box .success-message {
+    display: none;
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.login-box .error-message {
+    background: #fee;
+    color: #c33;
+    border: 1px solid #fcc;
+}
+
+.login-box .success-message {
+    background: #efe;
+    color: #3c3;
+    border: 1px solid #cfc;
+}
+
+/* ========================================
+   Header User Info Styles
+   ======================================== */
+
+.header-left {
+    flex: 1;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 16px;
+    background: var(--background);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.user-info .username {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.user-info .username::before {
+    content: '👤 ';
+    margin-right: 5px;
+}
+
+.user-info .logout-button {
+    padding: 8px 16px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.user-info .logout-button:hover {
+    background: #fee;
+    color: #c33;
+    border-color: #fcc;
+}
+
+.user-info .logout-button:active {
+    transform: scale(0.98);
+}
+
+/* Responsive adjustments for login */
+@media (max-width: 480px) {
+    .login-box {
+        padding: 30px 20px;
+    }
+
+    .login-box h1 {
+        font-size: 24px;
+    }
+}
+
+/* Responsive for header */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .header-left {
+        text-align: center;
+        width: 100%;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .user-info {
+        width: 100%;
+        justify-content: center;
+        padding: 10px;
+    }
+}
+
+/* ========================================
+   Already Logged In Status
+   ======================================== */
+
+.login-info-box {
+    background: white;
+    border-radius: 10px;
+    padding: 40px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.login-info-box h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+.login-info-box p {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 14px;
+}
+
+.login-info-box button {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+}
+
+.login-info-box .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.login-info-box .btn-primary:hover {
+    background: #5568d3;
+}
+
+.login-info-box .btn-secondary {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.login-info-box .btn-secondary:hover {
+    background: #f0f2ff;
 }
