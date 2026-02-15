@@ -127,12 +127,91 @@ class CourseSearchTool(Tool):
 
         return "\n\n".join(formatted)
 
+class CourseOutlineTool(Tool):
+    """Tool for retrieving course outlines with lesson information"""
+
+    def __init__(self, vector_store: VectorStore):
+        self.store = vector_store
+
+    def get_tool_definition(self) -> Dict[str, Any]:
+        """Return Anthropic tool definition for this tool"""
+        return {
+            "name": "get_course_outline",
+            "description": "Get course outline including title, link, and complete lesson list",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "course_title": {
+                        "type": "string",
+                        "description": "Course title to get outline for (partial matches work, e.g. 'MCP', 'Introduction')"
+                    }
+                },
+                "required": ["course_title"]
+            }
+        }
+
+    def execute(self, course_title: str) -> str:
+        """
+        Execute the outline tool with given parameters.
+
+        Args:
+            course_title: Course title to get outline for
+
+        Returns:
+            Formatted course outline with title, link, and lessons
+        """
+        import json
+
+        # Step 1: Resolve course name using vector search
+        resolved_title = self.store._resolve_course_name(course_title)
+        if not resolved_title:
+            return f"No course found matching '{course_title}'"
+
+        # Step 2: Get course metadata from catalog
+        try:
+            results = self.store.course_catalog.get(ids=[resolved_title])
+            if not results or 'metadatas' not in results or not results['metadatas']:
+                return f"Error retrieving course data for '{resolved_title}'"
+
+            metadata = results['metadatas'][0]
+
+            # Extract course information
+            title = metadata.get('title', 'Unknown')
+            course_link = metadata.get('course_link', 'No link available')
+            instructor = metadata.get('instructor', 'Unknown')
+
+            # Parse lessons from JSON
+            lessons_json = metadata.get('lessons_json')
+            if not lessons_json:
+                return f"Course: {title}\nLink: {course_link}\nInstructor: {instructor}\n\nNo lesson information available."
+
+            lessons = json.loads(lessons_json)
+
+            # Format the outline
+            formatted = [
+                f"Course: {title}",
+                f"Link: {course_link}",
+                f"Instructor: {instructor}",
+                f"\nLessons ({len(lessons)} total):"
+            ]
+
+            for lesson in lessons:
+                lesson_num = lesson.get('lesson_number', 'N/A')
+                lesson_title_text = lesson.get('lesson_title', 'Untitled')
+                formatted.append(f"  Lesson {lesson_num}: {lesson_title_text}")
+
+            return "\n".join(formatted)
+
+        except Exception as e:
+            return f"Error retrieving course outline: {str(e)}"
+
+
 class ToolManager:
     """Manages available tools for the AI"""
-    
+
     def __init__(self):
         self.tools = {}
-    
+
     def register_tool(self, tool: Tool):
         """Register any tool that implements the Tool interface"""
         tool_def = tool.get_tool_definition()
@@ -141,18 +220,18 @@ class ToolManager:
             raise ValueError("Tool must have a 'name' in its definition")
         self.tools[tool_name] = tool
 
-    
+
     def get_tool_definitions(self) -> list:
         """Get all tool definitions for Anthropic tool calling"""
         return [tool.get_tool_definition() for tool in self.tools.values()]
-    
+
     def execute_tool(self, tool_name: str, **kwargs) -> str:
         """Execute a tool by name with given parameters"""
         if tool_name not in self.tools:
             return f"Tool '{tool_name}' not found"
-        
+
         return self.tools[tool_name].execute(**kwargs)
-    
+
     def get_last_sources(self) -> list:
         """Get sources from the last search operation"""
         # Check all tools for last_sources attribute
