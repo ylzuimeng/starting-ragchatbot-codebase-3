@@ -115,7 +115,9 @@ function setupEventListeners() {
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
-            const question = e.target.getAttribute('data-question');
+            // ✅ 使用 currentTarget 而不是 target，确保获取 button 元素
+            const question = e.currentTarget.getAttribute('data-question');
+            console.log('[Suggested Question] Clicked:', question);
             chatInput.value = question;
             sendMessage();
         });
@@ -128,13 +130,19 @@ async function sendMessage() {
     const query = chatInput.value.trim();
     if (!query) return;
 
+    console.log('[sendMessage] Query:', query);
+
     // Disable input
     chatInput.value = '';
     chatInput.disabled = true;
     sendButton.disabled = true;
 
+    console.log('[sendMessage] About to call addMessage...');
+
     // Add user message
     addMessage(query, 'user');
+
+    console.log('[sendMessage] User message added');
 
     // Add loading message - create a unique container for it
     const loadingMessage = createLoadingMessage();
@@ -199,15 +207,51 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     messageDiv.id = `message-${messageId}`;
 
     // Convert markdown to HTML for assistant messages
-    const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
+    // Check if marked library is loaded to avoid errors
+    let displayContent;
+    if (type === 'assistant') {
+        try {
+            displayContent = (typeof marked !== 'undefined') ? marked.parse(content) : escapeHtml(content);
+        } catch (e) {
+            console.error('Markdown parsing error:', e);
+            displayContent = escapeHtml(content);
+        }
+    } else {
+        displayContent = escapeHtml(content);
+    }
 
     let html = `<div class="message-content">${displayContent}</div>`;
 
     if (sources && sources.length > 0) {
+        // Render sources with optional links
+        const sourcesHtml = sources.map(source => {
+            // Handle new format (object with text and link)
+            if (typeof source === 'object' && source.text) {
+                if (source.link) {
+                    // Render as clickable link
+                    return `<a href="${escapeHtml(source.link)}"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="source-link"
+                                  title="点击观看视频">
+                        ${escapeHtml(source.text)}
+                        <svg class="source-link-icon" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                            <path d="M14 3h7v7h-2V6.4L8.4 17 7 15.6 17 6.4V9h-2v7h7V3z"/>
+                        </svg>
+                    </a>`;
+                } else {
+                    // No link available, render as plain text
+                    return `<span class="source-item">${escapeHtml(source.text)}</span>`;
+                }
+            }
+            // Handle old format (string) for backward compatibility
+            return `<span class="source-item">${escapeHtml(source)}</span>`;
+        }).join('<span class="source-separator">, </span>');
+
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">来源</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${sourcesHtml}</div>
             </details>
         `;
     }
@@ -227,15 +271,42 @@ function escapeHtml(text) {
 }
 
 async function createNewSession() {
+    // Reset session ID to null (new session will be created on next query)
     currentSessionId = null;
-    chatMessages.innerHTML = '';
+
+    // Clear chat messages from UI
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+        chatMessages.innerHTML = '';
+    }
+
+    // Clear input field
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.value = '';
+    }
+
+    // Show welcome message
     addMessage('欢迎使用 RAG 课程助手！我可以帮您回答关于课程、课程内容和具体内容的问题。您想了解什么？', 'assistant', null, true);
+
+    // Focus on input field for new conversation
+    if (chatInput) {
+        chatInput.focus();
+    }
+
+    // Log session start for debugging
+    console.log('New session started');
 }
 
 // Load course statistics
 async function loadCourseStats() {
     try {
         console.log('Loading course stats...');
+
+        // Show loading state
+        if (totalCourses) totalCourses.innerHTML = '<span class="loading">加载中...</span>';
+        if (courseTitles) courseTitles.innerHTML = '<span class="loading">加载中...</span>';
+
         const response = await authenticatedFetch(`${API_URL}/courses`);
         if (!response.ok) throw new Error('Failed to load course stats');
 

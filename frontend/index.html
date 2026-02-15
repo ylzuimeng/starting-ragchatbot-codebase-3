@@ -7,19 +7,29 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>RAG课程助手</title>
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <header>
             <div class="header-left">
-                <h1>RAG课程助手</h1>
-                <p class="subtitle">询问课程、讲师和内容相关问题</p>
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <h1>RAG课程助手</h1>
+                </div>
+                <p class="subtitle">
+                    <i class="fas fa-lightbulb"></i>
+                    询问课程、讲师和内容相关问题
+                </p>
             </div>
             <div class="header-right">
                 <div class="user-info">
                     <span class="username" id="username"></span>
-                    <button id="logoutBtn" class="logout-button">登出</button>
+                    <button id="logoutBtn" class="logout-button">
+                        <i class="fas fa-sign-out-alt"></i>
+                        登出
+                    </button>
                 </div>
             </div>
         </header>
@@ -27,18 +37,37 @@
         <div class="main-content">
             <!-- Left Sidebar -->
             <aside class="sidebar">
+                <!-- New Chat Button -->
+                <div class="sidebar-section">
+                    <div class="stats-header" onclick="createNewSession()">
+                        <i class="fas fa-plus"></i>
+                        <span>新建对话</span>
+                    </div>
+                </div>
+
                 <!-- Course Stats -->
                 <div class="sidebar-section">
                     <details class="stats-collapsible">
-                        <summary class="stats-header">Courses</summary>
+                        <summary class="stats-header">
+                            <i class="fas fa-book"></i>
+                            <span>课程列表</span>
+                        </summary>
                         <div class="course-stats" id="courseStats">
-                            <div class="stat-item">
-                                <span class="stat-label">Number of courses:</span>
-                                <span class="stat-value" id="totalCourses">-</span>
+                            <div class="stat-item stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <span class="stat-label">课程总数</span>
+                                    <span class="stat-value" id="totalCourses">-</span>
+                                </div>
                             </div>
                             <div class="stat-item">
                                 <div class="course-titles" id="courseTitles">
-                                    <span class="loading">Loading...</span>
+                                    <span class="loading">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        加载中...
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -48,12 +77,27 @@
                 <!-- Suggested Questions -->
                 <div class="sidebar-section">
                     <details class="suggested-collapsible" open>
-                        <summary class="suggested-header">建议问题：</summary>
+                        <summary class="suggested-header">
+                            <i class="fas fa-question-circle"></i>
+                            <span>建议问题</span>
+                        </summary>
                         <div class="suggested-items">
-                            <button class="suggested-item" data-question="MCP课程的提纲是什么？">课程提纲</button>
-                            <button class="suggested-item" data-question="有哪些课程包含Chatbot实现？">关于Chatbot的课程</button>
-                            <button class="suggested-item" data-question="有哪些课程解释了什么是RAG？">解释RAG的课程</button>
-                            <button class="suggested-item" data-question="MCP课程第5课讲了什么内容？">课程具体内容</button>
+                            <button class="suggested-item" data-question="MCP课程的提纲是什么？">
+                                <i class="fas fa-list"></i>
+                                <span>课程提纲</span>
+                            </button>
+                            <button class="suggested-item" data-question="有哪些课程包含Chatbot实现？">
+                                <i class="fas fa-comments"></i>
+                                <span>关于Chatbot的课程</span>
+                            </button>
+                            <button class="suggested-item" data-question="有哪些课程解释了什么是RAG？">
+                                <i class="fas fa-search"></i>
+                                <span>解释RAG的课程</span>
+                            </button>
+                            <button class="suggested-item" data-question="MCP课程第5课讲了什么内容？">
+                                <i class="fas fa-book-open"></i>
+                                <span>课程具体内容</span>
+                            </button>
                         </div>
                     </details>
                 </div>
@@ -64,18 +108,17 @@
                 <div class="chat-container">
                     <div id="chatMessages" class="chat-messages"></div>
                     <div class="chat-input-container">
-                        <input
-                            type="text"
-                            id="chatInput"
-                            placeholder="询问课程、课程内容或具体问题..."
-                            autocomplete="off"
-                        >
-                        <button id="sendButton">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                        </button>
+                        <div class="input-wrapper">
+                            <input
+                                type="text"
+                                id="chatInput"
+                                placeholder="输入您的问题..."
+                                autocomplete="off"
+                            >
+                            <button id="sendButton" class="send-button">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -84,6 +127,6 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="script.js?v=9"></script>
+    <script src="script.js?v=10"></script>
 </body>
 </html>
