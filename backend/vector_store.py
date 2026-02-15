@@ -193,24 +193,22 @@ class VectorStore:
             print(f"Error clearing data: {e}")
     
     def get_existing_course_titles(self) -> List[str]:
-        """Get all existing course titles from the vector store"""
+        """Get all existing course titles from the vector store (optimized)"""
         try:
-            # Get all documents from the catalog
-            results = self.course_catalog.get()
+            # IDs are returned by default, use empty include to avoid loading documents/embeddings
+            results = self.course_catalog.get(include=[])
             if results and 'ids' in results:
                 return results['ids']
             return []
         except Exception as e:
             print(f"Error getting existing course titles: {e}")
             return []
-    
+
     def get_course_count(self) -> int:
-        """Get the total number of courses in the vector store"""
+        """Get the total number of courses in the vector store (optimized)"""
         try:
-            results = self.course_catalog.get()
-            if results and 'ids' in results:
-                return len(results['ids'])
-            return 0
+            # Use count() method - much faster than get()
+            return self.course_catalog.count()
         except Exception as e:
             print(f"Error getting course count: {e}")
             return 0
