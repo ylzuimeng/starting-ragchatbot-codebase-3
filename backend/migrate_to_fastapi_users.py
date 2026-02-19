@@ -7,10 +7,11 @@ This script:
 3. Renames password_hash to hashed_password
 4. Sets default values for existing users
 """
-import sqlite3
+
 import shutil
-from pathlib import Path
+import sqlite3
 from datetime import datetime
+from pathlib import Path
 
 
 def migrate_database(db_path: str = "./users.db"):
@@ -88,22 +89,25 @@ def migrate_database(db_path: str = "./users.db"):
         # Migrate data
         for row in rows:
             row_dict = dict(zip(column_names, row))
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO users_new (
                     id, email, hashed_password, username, created_at,
                     last_login, is_active, is_superuser, is_verified
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                row_dict.get("id"),
-                row_dict.get("email"),
-                row_dict.get("password_hash"),  # Map password_hash to hashed_password
-                row_dict.get("username"),
-                row_dict.get("created_at"),
-                row_dict.get("last_login"),
-                row_dict.get("is_active", 1),
-                row_dict.get("is_superuser", 0),  # Default to False
-                row_dict.get("is_verified", 1)    # Default to True
-            ))
+            """,
+                (
+                    row_dict.get("id"),
+                    row_dict.get("email"),
+                    row_dict.get("password_hash"),  # Map password_hash to hashed_password
+                    row_dict.get("username"),
+                    row_dict.get("created_at"),
+                    row_dict.get("last_login"),
+                    row_dict.get("is_active", 1),
+                    row_dict.get("is_superuser", 0),  # Default to False
+                    row_dict.get("is_verified", 1),  # Default to True
+                ),
+            )
 
         # Drop old table and rename new one
         cursor.execute("DROP TABLE users")
@@ -112,7 +116,9 @@ def migrate_database(db_path: str = "./users.db"):
         # Recreate indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_username ON users(username)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_email ON users(email)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_session ON conversation_history(user_id, session_id)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_user_session ON conversation_history(user_id, session_id)"
+        )
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_session_id ON user_sessions(session_id)")
 
         # Commit transaction
@@ -129,7 +135,9 @@ def migrate_database(db_path: str = "./users.db"):
         users = cursor.fetchall()
         print(f"👥 Migrated {len(users)} users:")
         for user in users:
-            print(f"   - ID: {user[0]}, Username: {user[1]}, Email: {user[2]}, Superuser: {user[3]}, Verified: {user[4]}")
+            print(
+                f"   - ID: {user[0]}, Username: {user[1]}, Email: {user[2]}, Superuser: {user[3]}, Verified: {user[4]}"
+            )
 
         return True
 
@@ -138,7 +146,7 @@ def migrate_database(db_path: str = "./users.db"):
         print(f"❌ Migration failed: {e}")
 
         # Restore from backup
-        print(f"🔄 Restoring from backup...")
+        print("🔄 Restoring from backup...")
         shutil.copy2(backup_path, db_path)
         print("✅ Database restored")
 

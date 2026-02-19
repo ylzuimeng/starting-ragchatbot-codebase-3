@@ -3,10 +3,11 @@ Tests for CourseSearchTool and CourseOutlineTool
 Tests the execute methods and error handling
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-from vector_store import VectorStore, SearchResults
-from search_tools import CourseSearchTool, CourseOutlineTool
+from search_tools import CourseOutlineTool, CourseSearchTool
+from vector_store import SearchResults, VectorStore
 
 
 class TestCourseSearchTool:
@@ -24,10 +25,10 @@ class TestCourseSearchTool:
             documents=["Chunk 1 content about Python", "Chunk 2 content about Java"],
             metadata=[
                 {"course_title": "Python Course", "lesson_number": 1},
-                {"course_title": "Java Course", "lesson_number": 2}
+                {"course_title": "Java Course", "lesson_number": 2},
             ],
             distances=[0.1, 0.2],
-            error=None
+            error=None,
         )
         self.mock_store.search.return_value = mock_results
         self.mock_store.get_lesson_link.return_value = "http://example.com/lesson/1"
@@ -38,9 +39,7 @@ class TestCourseSearchTool:
 
         # Verify search was called correctly
         self.mock_store.search.assert_called_once_with(
-            query="programming languages",
-            course_name=None,
-            lesson_number=None
+            query="programming languages", course_name=None, lesson_number=None
         )
 
         # Verify result format
@@ -60,21 +59,16 @@ class TestCourseSearchTool:
             documents=["Course content"],
             metadata=[{"course_title": "Python Course", "lesson_number": 1}],
             distances=[0.1],
-            error=None
+            error=None,
         )
         self.mock_store.search.return_value = mock_results
         self.mock_store.get_lesson_link.return_value = "http://example.com/lesson/1"
         self.mock_store.get_course_link.return_value = "http://example.com/course"
 
-        result = self.tool.execute(
-            query="data types",
-            course_name="Python"
-        )
+        result = self.tool.execute(query="data types", course_name="Python")
 
         self.mock_store.search.assert_called_once_with(
-            query="data types",
-            course_name="Python",
-            lesson_number=None
+            query="data types", course_name="Python", lesson_number=None
         )
         assert "Course content" in result
 
@@ -84,32 +78,22 @@ class TestCourseSearchTool:
             documents=["Lesson content"],
             metadata=[{"course_title": "Python Course", "lesson_number": 3}],
             distances=[0.1],
-            error=None
+            error=None,
         )
         self.mock_store.search.return_value = mock_results
         self.mock_store.get_lesson_link.return_value = None
         self.mock_store.get_course_link.return_value = "http://example.com/course"
 
-        result = self.tool.execute(
-            query="functions",
-            lesson_number=3
-        )
+        result = self.tool.execute(query="functions", lesson_number=3)
 
         self.mock_store.search.assert_called_once_with(
-            query="functions",
-            course_name=None,
-            lesson_number=3
+            query="functions", course_name=None, lesson_number=3
         )
         assert "Lesson content" in result
 
     def test_execute_with_no_results(self):
         """Test execute handles empty results gracefully"""
-        mock_results = SearchResults(
-            documents=[],
-            metadata=[],
-            distances=[],
-            error=None
-        )
+        mock_results = SearchResults(documents=[], metadata=[], distances=[], error=None)
         self.mock_store.search.return_value = mock_results
 
         result = self.tool.execute(query="nonexistent topic")
@@ -118,19 +102,10 @@ class TestCourseSearchTool:
 
     def test_execute_with_no_results_filtered(self):
         """Test execute handles empty results with filters"""
-        mock_results = SearchResults(
-            documents=[],
-            metadata=[],
-            distances=[],
-            error=None
-        )
+        mock_results = SearchResults(documents=[], metadata=[], distances=[], error=None)
         self.mock_store.search.return_value = mock_results
 
-        result = self.tool.execute(
-            query="something",
-            course_name="Python",
-            lesson_number=5
-        )
+        result = self.tool.execute(query="something", course_name="Python", lesson_number=5)
 
         assert "in course 'Python'" in result
         assert "in lesson 5" in result
@@ -138,10 +113,7 @@ class TestCourseSearchTool:
     def test_execute_with_search_error(self):
         """Test execute propagates search errors"""
         mock_results = SearchResults(
-            documents=[],
-            metadata=[],
-            distances=[],
-            error="Connection failed"
+            documents=[], metadata=[], distances=[], error="Connection failed"
         )
         self.mock_store.search.return_value = mock_results
 
@@ -152,12 +124,7 @@ class TestCourseSearchTool:
     def test_execute_with_zero_max_results(self):
         """Test execute behavior when vector store returns 0 results (config issue)"""
         # This simulates the MAX_RESULTS=0 bug
-        mock_results = SearchResults(
-            documents=[],
-            metadata=[],
-            distances=[],
-            error=None
-        )
+        mock_results = SearchResults(documents=[], metadata=[], distances=[], error=None)
         self.mock_store.search.return_value = mock_results
 
         result = self.tool.execute(query="test query")
@@ -192,20 +159,34 @@ class TestCourseOutlineTool:
 
         # Mock course metadata retrieval
         lessons_metadata = [
-            {"lesson_number": 0, "lesson_title": "Introduction", "lesson_link": "http://example.com/0"},
-            {"lesson_number": 1, "lesson_title": "Variables", "lesson_link": "http://example.com/1"},
-            {"lesson_number": 2, "lesson_title": "Functions", "lesson_link": "http://example.com/2"}
+            {
+                "lesson_number": 0,
+                "lesson_title": "Introduction",
+                "lesson_link": "http://example.com/0",
+            },
+            {
+                "lesson_number": 1,
+                "lesson_title": "Variables",
+                "lesson_link": "http://example.com/1",
+            },
+            {
+                "lesson_number": 2,
+                "lesson_title": "Functions",
+                "lesson_link": "http://example.com/2",
+            },
         ]
 
         # Setup mock course_catalog
         mock_catalog = Mock()
         mock_catalog.get.return_value = {
-            'metadatas': [{
-                'title': 'Complete Python Course',
-                'course_link': 'http://example.com/course',
-                'instructor': 'John Doe',
-                'lessons_json': json.dumps(lessons_metadata)
-            }]
+            "metadatas": [
+                {
+                    "title": "Complete Python Course",
+                    "course_link": "http://example.com/course",
+                    "instructor": "John Doe",
+                    "lessons_json": json.dumps(lessons_metadata),
+                }
+            ]
         }
         self.mock_store.course_catalog = mock_catalog
 
@@ -249,12 +230,14 @@ class TestCourseOutlineTool:
 
         mock_catalog = Mock()
         mock_catalog.get.return_value = {
-            'metadatas': [{
-                'title': 'Empty Course',
-                'course_link': 'http://example.com/empty',
-                'instructor': 'Jane Doe',
-                'lessons_json': None
-            }]
+            "metadatas": [
+                {
+                    "title": "Empty Course",
+                    "course_link": "http://example.com/empty",
+                    "instructor": "Jane Doe",
+                    "lessons_json": None,
+                }
+            ]
         }
         self.mock_store.course_catalog = mock_catalog
 
@@ -277,11 +260,12 @@ class TestToolManager:
     def setup_method(self):
         """Setup test fixtures"""
         from search_tools import ToolManager
+
         self.manager = ToolManager()
         self.mock_tool = Mock()
         self.mock_tool.get_tool_definition.return_value = {
             "name": "test_tool",
-            "description": "Test tool"
+            "description": "Test tool",
         }
 
     def test_register_tool(self):

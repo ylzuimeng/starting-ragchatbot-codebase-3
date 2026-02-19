@@ -1,12 +1,13 @@
 """
 JWT认证和密码哈希模块
 """
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
-from typing import Optional, Dict
-from config import config
 
+from datetime import datetime, timedelta
+from typing import Dict, Optional
+
+from config import config
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 # 密码哈希上下文（使用bcrypt）
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

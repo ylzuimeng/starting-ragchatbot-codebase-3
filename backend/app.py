@@ -1,35 +1,27 @@
 import warnings
+
 warnings.filterwarnings("ignore", message="resource_tracker: There appear to be.*")
 
-from fastapi import FastAPI, HTTPException, status, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from pydantic import BaseModel
-from typing import List, Optional, Dict
 import os
-
-from config import config
-from rag_system import RAGSystem
+from typing import Dict, List, Optional
 
 # Import FastAPI Users components
-from auth_config import (
-    get_user_manager,
-    get_async_session,
-    get_jwt_strategy,
-    async_session_maker
-)
+from auth_config import async_session_maker, get_async_session, get_jwt_strategy, get_user_manager
+from config import config
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from rag_system import RAGSystem
+from sqlalchemy import or_, select
 from users import UserTable
-from sqlalchemy import select, or_
 
 # Initialize FastAPI app
 app = FastAPI(title="Course Materials RAG System", root_path="")
 
 # Add trusted host middleware for proxy
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["*"]
-)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # Enable CORS with proper settings for proxy
 app.add_middleware(
@@ -48,50 +40,66 @@ rag_system = RAGSystem(config)
 # Pydantic models for request/response
 # ============================================================================
 
+
 class QueryRequest(BaseModel):
     """Request model for course queries"""
+
     query: str
     session_id: Optional[str] = None
 
+
 class QueryResponse(BaseModel):
     """Response model for course queries"""
+
     answer: str
     sources: List[Dict[str, Optional[str]]]  # Format: [{"text": "...", "link": "..."}]
     session_id: str
 
+
 class CourseStats(BaseModel):
     """Response model for course statistics"""
+
     total_courses: int
     course_titles: List[str]
 
+
 class UserRegister(BaseModel):
     """User registration request"""
+
     username: str
     email: str
     password: str
 
+
 class UserLogin(BaseModel):
     """User login request"""
+
     username: str
     password: str
 
+
 class AuthResponse(BaseModel):
     """Authentication response"""
+
     access_token: str
     token_type: str = "bearer"
     user: dict
 
+
 class UserResponse(BaseModel):
     """User information response"""
+
     id: int
     username: str
     email: str
     is_verified: bool
     is_superuser: bool
 
+
 # ============================================================================
 # Authentication Endpoints
 # ============================================================================
+
 
 @app.post("/api/auth/register", response_model=AuthResponse)
 async def register(user_data: UserRegister):
@@ -111,20 +119,12 @@ async def register(user_data: UserRegister):
             select(UserTable).where(UserTable.username == user_data.username)
         )
         if result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=400,
-                detail="Username already exists"
-            )
+            raise HTTPException(status_code=400, detail="Username already exists")
 
         # Check if email exists
-        result = await session.execute(
-            select(UserTable).where(UserTable.email == user_data.email)
-        )
+        result = await session.execute(select(UserTable).where(UserTable.email == user_data.email))
         if result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=400,
-                detail="Email already exists"
-            )
+            raise HTTPException(status_code=400, detail="Email already exists")
 
         # Create new user
         hashed_password = pwd_context.hash(user_data.password)
@@ -134,7 +134,7 @@ async def register(user_data: UserRegister):
             username=user_data.username,
             is_active=True,
             is_verified=True,
-            is_superuser=False
+            is_superuser=False,
         )
 
         session.add(new_user)
@@ -152,8 +152,8 @@ async def register(user_data: UserRegister):
                 "username": new_user.username,
                 "email": new_user.email,
                 "is_verified": new_user.is_verified,
-                "is_superuser": new_user.is_superuser
-            }
+                "is_superuser": new_user.is_superuser,
+            },
         )
 
 
@@ -174,7 +174,7 @@ async def login(login_data: UserLogin):
             select(UserTable).where(
                 or_(
                     UserTable.username == login_data.username,
-                    UserTable.email == login_data.username
+                    UserTable.email == login_data.username,
                 )
             )
         )
@@ -197,6 +197,7 @@ async def login(login_data: UserLogin):
 
         # Update last_login
         from datetime import datetime
+
         user.last_login = datetime.utcnow()
         await session.commit()
 
@@ -211,14 +212,14 @@ async def login(login_data: UserLogin):
                 "username": user.username,
                 "email": user.email,
                 "is_verified": user.is_verified,
-                "is_superuser": user.is_superuser
-            }
+                "is_superuser": user.is_superuser,
+            },
         )
 
 
 async def get_current_user(token: str) -> UserTable:
     """Dependency to get current authenticated user from JWT token."""
-    from jose import jwt, JWTError
+    from jose import JWTError, jwt
 
     try:
         # Verify token and get user ID using the secret key
@@ -226,46 +227,33 @@ async def get_current_user(token: str) -> UserTable:
             token,
             config.SECRET_KEY,
             algorithms=["HS256"],
-            options={"verify_aud": False}  # Skip audience verification for simplicity
+            options={"verify_aud": False},  # Skip audience verification for simplicity
         )
         user_id = payload.get("sub")
 
         if not user_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid token"
-            )
+            raise HTTPException(status_code=401, detail="Invalid token")
 
         # Get user from database
         async with async_session_maker() as session:
             user = await session.get(UserTable, int(user_id))
             if not user:
-                raise HTTPException(
-                    status_code=401,
-                    detail="User not found"
-                )
+                raise HTTPException(status_code=401, detail="User not found")
             return user
 
     except JWTError:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token"
-        )
+        raise HTTPException(status_code=401, detail="Invalid token")
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=401,
-            detail=f"Invalid authentication credentials: {str(e)}"
-        )
+        raise HTTPException(status_code=401, detail=f"Invalid authentication credentials: {str(e)}")
 
 
 # Custom dependency to extract Bearer token
 from fastapi import Header
 
-async def get_bearer_token(
-    authorization: Optional[str] = Header(None)
-) -> str:
+
+async def get_bearer_token(authorization: Optional[str] = Header(None)) -> str:
     """Extract Bearer token from Authorization header."""
     if not authorization:
         raise HTTPException(
@@ -286,9 +274,7 @@ async def get_bearer_token(
 
 
 @app.get("/api/auth/me", response_model=UserResponse)
-async def get_current_user_info(
-    token: str = Depends(get_bearer_token)
-):
+async def get_current_user_info(token: str = Depends(get_bearer_token)):
     """Get current user information"""
     user = await get_current_user(token)
     return UserResponse(
@@ -296,7 +282,7 @@ async def get_current_user_info(
         username=user.username,
         email=user.email,
         is_verified=user.is_verified,
-        is_superuser=user.is_superuser
+        is_superuser=user.is_superuser,
     )
 
 
@@ -305,15 +291,14 @@ async def logout():
     """User logout (client should delete token)"""
     return {"message": "Successfully logged out"}
 
+
 # ============================================================================
 # Protected API Endpoints
 # ============================================================================
 
+
 @app.post("/api/query", response_model=QueryResponse)
-async def query_documents(
-    request: QueryRequest,
-    token: str = Depends(get_bearer_token)
-):
+async def query_documents(request: QueryRequest, token: str = Depends(get_bearer_token)):
     """Process a query and return response with sources"""
     try:
         user = await get_current_user(token)
@@ -322,16 +307,13 @@ async def query_documents(
         if not session_id:
             # Create new session for user
             import time
+
             session_id = f"user_{user.id}_{int(time.time())}"
 
         # Process query using RAG system
         answer, sources = rag_system.query(request.query, session_id)
 
-        return QueryResponse(
-            answer=answer,
-            sources=sources,
-            session_id=session_id
-        )
+        return QueryResponse(answer=answer, sources=sources, session_id=session_id)
     except HTTPException:
         raise
     except Exception as e:
@@ -339,9 +321,7 @@ async def query_documents(
 
 
 @app.get("/api/courses", response_model=CourseStats)
-async def get_course_stats(
-    token: str = Depends(get_bearer_token)
-):
+async def get_course_stats(token: str = Depends(get_bearer_token)):
     """Get course analytics and statistics"""
     try:
         # Verify authentication
@@ -349,8 +329,7 @@ async def get_course_stats(
 
         analytics = rag_system.get_course_analytics()
         return CourseStats(
-            total_courses=analytics["total_courses"],
-            course_titles=analytics["course_titles"]
+            total_courses=analytics["total_courses"], course_titles=analytics["course_titles"]
         )
     except HTTPException:
         raise
@@ -361,6 +340,7 @@ async def get_course_stats(
 # ============================================================================
 # Startup Event
 # ============================================================================
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -379,11 +359,12 @@ async def startup_event():
 # Static Files
 # ============================================================================
 
+
 # Custom static file handler with no-cache headers for development
 class DevStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
         response = await super().get_response(path, scope)
-        if hasattr(response, 'headers'):
+        if hasattr(response, "headers"):
             # Add no-cache headers for development
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"

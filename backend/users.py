@@ -4,17 +4,16 @@ FastAPI Users user models and database configuration.
 This module defines the user model with custom fields (username, last_login)
 and integrates with FastAPI Users authentication system.
 """
+
 from datetime import datetime
 from typing import Optional
 
+from config import config
 from pydantic import BaseModel
-from sqlalchemy import Boolean, String, Integer, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.declarative import declarative_base
-
-from config import config
-
+from sqlalchemy.orm import Mapped, mapped_column
 
 # SQLAlchemy Base
 Base = declarative_base()
@@ -27,6 +26,7 @@ class UserTable(Base, AsyncAttrs):
     This model represents the users table in the database.
     It includes both FastAPI Users required fields and custom fields.
     """
+
     __tablename__ = "users"
 
     # FastAPI Users required fields
@@ -45,6 +45,7 @@ class UserTable(Base, AsyncAttrs):
 # FastAPI Users Pydantic models - simplified for our use case
 class User(BaseModel):
     """FastAPI Users base user model for API responses."""
+
     id: int
     email: str
     username: str
@@ -58,6 +59,7 @@ class User(BaseModel):
 
 class UserCreate(BaseModel):
     """User creation model with username field."""
+
     email: str
     password: str
     username: str
@@ -68,6 +70,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     """User update model."""
+
     password: Optional[str] = None
     email: Optional[str] = None
     username: Optional[str] = None

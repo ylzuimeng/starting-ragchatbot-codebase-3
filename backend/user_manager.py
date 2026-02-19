@@ -1,11 +1,13 @@
 """
 用户管理模块
 """
-from typing import Optional, Dict
-from sqlalchemy import text
+
+from typing import Dict, Optional
+
+from auth import create_access_token, get_password_hash, verify_password
 from database import Database
-from models_db import UserCreate, UserLogin, AuthResponse, UserResponse
-from auth import verify_password, get_password_hash, create_access_token
+from models_db import AuthResponse, UserCreate, UserLogin, UserResponse
+from sqlalchemy import text
 
 
 class UserManager:
@@ -37,7 +39,7 @@ class UserManager:
             # 检查用户名是否已存在
             result = session.execute(
                 text("SELECT id FROM users WHERE username = :username"),
-                {"username": user_data.username}
+                {"username": user_data.username},
             ).fetchone()
 
             if result:
@@ -45,8 +47,7 @@ class UserManager:
 
             # 检查邮箱是否已存在
             result = session.execute(
-                text("SELECT id FROM users WHERE email = :email"),
-                {"email": user_data.email}
+                text("SELECT id FROM users WHERE email = :email"), {"email": user_data.email}
             ).fetchone()
 
             if result:
@@ -63,8 +64,8 @@ class UserManager:
                 {
                     "username": user_data.username,
                     "email": user_data.email,
-                    "password_hash": password_hash
-                }
+                    "password_hash": password_hash,
+                },
             ).fetchone()
 
             # 生成token
@@ -77,8 +78,8 @@ class UserManager:
                     id=result[0],
                     username=result[1],
                     email=result[2],
-                    created_at=str(result[3]) if result[3] else None
-                )
+                    created_at=str(result[3]) if result[3] else None,
+                ),
             )
 
     def authenticate_user(self, login_data: UserLogin) -> AuthResponse:
@@ -100,7 +101,7 @@ class UserManager:
                     SELECT id, username, email, password_hash
                     FROM users WHERE username = :username
                 """),
-                {"username": login_data.username}
+                {"username": login_data.username},
             ).fetchone()
 
             if not result or not verify_password(login_data.password, result[3]):
@@ -109,7 +110,7 @@ class UserManager:
             # 更新最后登录时间
             session.execute(
                 text("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = :id"),
-                {"id": result[0]}
+                {"id": result[0]},
             )
 
             # 生成token
@@ -118,11 +119,7 @@ class UserManager:
 
             return AuthResponse(
                 access_token=access_token,
-                user=UserResponse(
-                    id=result[0],
-                    username=result[1],
-                    email=result[2]
-                )
+                user=UserResponse(id=result[0], username=result[1], email=result[2]),
             )
 
     def get_user_by_id(self, user_id: int) -> Optional[Dict]:
@@ -141,7 +138,7 @@ class UserManager:
                     SELECT id, username, email, created_at
                     FROM users WHERE id = :user_id
                 """),
-                {"user_id": user_id}
+                {"user_id": user_id},
             ).fetchone()
 
             if not result:
@@ -151,5 +148,5 @@ class UserManager:
                 "id": result[0],
                 "username": result[1],
                 "email": result[2],
-                "created_at": str(result[3]) if result[3] else None
+                "created_at": str(result[3]) if result[3] else None,
             }

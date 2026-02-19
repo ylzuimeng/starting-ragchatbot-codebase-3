@@ -6,8 +6,9 @@ logic for handling network failures and rate limits.
 """
 
 import time
+from typing import List, Optional, Union
+
 import numpy as np
-from typing import List, Union, Optional
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from zhipuai import ZhipuAI
 
@@ -68,7 +69,7 @@ class ZhipuEmbeddingFunction(EmbeddingFunction[Documents]):
 
         # Process in batches
         for i in range(0, len(texts), BATCH_SIZE):
-            batch = texts[i:i + BATCH_SIZE]
+            batch = texts[i : i + BATCH_SIZE]
             batch_embeddings = self._embed_batch_with_retry(batch)
             all_embeddings.extend(batch_embeddings)
 
@@ -92,16 +93,10 @@ class ZhipuEmbeddingFunction(EmbeddingFunction[Documents]):
 
         for attempt in range(max_retries):
             try:
-                response = self.client.embeddings.create(
-                    model=self.model_name,
-                    input=texts
-                )
+                response = self.client.embeddings.create(model=self.model_name, input=texts)
 
                 # Extract embeddings and convert to numpy arrays with float32 dtype
-                embeddings = [
-                    np.array(item.embedding, dtype=np.float32)
-                    for item in response.data
-                ]
+                embeddings = [np.array(item.embedding, dtype=np.float32) for item in response.data]
 
                 return embeddings
 
@@ -117,7 +112,7 @@ class ZhipuEmbeddingFunction(EmbeddingFunction[Documents]):
 
                 # For other errors, retry with exponential backoff
                 if attempt < max_retries - 1:
-                    delay = base_delay * (2 ** attempt)
+                    delay = base_delay * (2**attempt)
                     print(
                         f"⚠ ZhipuAI API error (attempt {attempt + 1}/{max_retries}): "
                         f"{error_str}. Retrying in {delay}s..."

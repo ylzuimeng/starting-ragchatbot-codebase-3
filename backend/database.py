@@ -1,10 +1,12 @@
 """
 数据库连接和表管理模块
 """
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+
 from contextlib import contextmanager
 from typing import Generator
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 
 class Database:
@@ -84,5 +86,11 @@ class Database:
             # 创建索引
             conn.execute(text("CREATE INDEX IF NOT EXISTS idx_username ON users(username)"))
             conn.execute(text("CREATE INDEX IF NOT EXISTS idx_email ON users(email)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_user_session ON conversation_history(user_id, session_id)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_session_id ON user_sessions(session_id)"))
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_user_session ON conversation_history(user_id, session_id)"
+                )
+            )
+            conn.execute(
+                text("CREATE INDEX IF NOT EXISTS idx_session_id ON user_sessions(session_id)")
+            )

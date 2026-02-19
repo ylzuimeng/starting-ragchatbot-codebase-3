@@ -1,22 +1,20 @@
 """
 测试认证系统的简单脚本
 """
-import requests
+
 import json
+
+import requests
 
 API_BASE = "http://localhost:8000/api"
 
-print("="*60)
+print("=" * 60)
 print("测试RAG系统登录功能")
-print("="*60)
+print("=" * 60)
 
 # 1. 测试注册
 print("\n1. 测试用户注册...")
-register_data = {
-    "username": "testuser",
-    "email": "test@example.com",
-    "password": "testpass123"
-}
+register_data = {"username": "testuser", "email": "test@example.com", "password": "testpass123"}
 
 try:
     response = requests.post(f"{API_BASE}/auth/register", json=register_data)
@@ -25,7 +23,7 @@ try:
         print("✅ 注册成功！")
         print(f"   用户: {data['user']['username']}")
         print(f"   Token: {data['access_token'][:20]}...")
-        token = data['access_token']
+        token = data["access_token"]
     else:
         print(f"❌ 注册失败: {response.status_code}")
         print(response.text)
@@ -37,10 +35,7 @@ except Exception as e:
 # 2. 测试登录（如果注册失败）
 if not token:
     print("\n2. 测试用户登录...")
-    login_data = {
-        "username": "testuser",
-        "password": "testpass123"
-    }
+    login_data = {"username": "testuser", "password": "testpass123"}
 
     try:
         response = requests.post(f"{API_BASE}/auth/login", json=login_data)
@@ -48,7 +43,7 @@ if not token:
             data = response.json()
             print("✅ 登录成功！")
             print(f"   用户: {data['user']['username']}")
-            token = data['access_token']
+            token = data["access_token"]
         else:
             print(f"❌ 登录失败: {response.status_code}")
             print(response.text)
@@ -81,7 +76,7 @@ if token:
         response = requests.get(f"{API_BASE}/courses", headers=headers)
         if response.status_code == 200:
             data = response.json()
-            print(f"\n✅ 获取课程统计成功！")
+            print("\n✅ 获取课程统计成功！")
             print(f"   课程总数: {data['total_courses']}")
         else:
             print(f"❌ 获取课程统计失败: {response.status_code}")
@@ -99,8 +94,8 @@ try:
 except Exception as e:
     print(f"❌ 测试错误: {e}")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("测试完成！")
-print("="*60)
+print("=" * 60)
 print("\n🌐 访问 http://localhost:8000/login.html 测试前端界面")
 print("🌐 访问 http://localhost:8000 查看主界面")

@@ -3,8 +3,9 @@ Tests for AIGenerator to verify it correctly calls CourseSearchTool
 Tests tool calling behavior and response generation
 """
 
+from unittest.mock import MagicMock, Mock, call, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch, call
 from ai_generator import AIGenerator
 
 
@@ -28,10 +29,7 @@ class TestAIGeneratorToolCalling:
 
     def setup_method(self):
         """Setup test fixtures"""
-        self.generator = AIGenerator(
-            api_key="test_key",
-            model="claude-sonnet-4-20250514"
-        )
+        self.generator = AIGenerator(api_key="test_key", model="claude-sonnet-4-20250514")
 
     def test_generate_response_without_tools(self):
         """Test response generation without tools"""
@@ -39,11 +37,9 @@ class TestAIGeneratorToolCalling:
         mock_response.stop_reason = "end_turn"
         mock_response.content = [MockTextBlock(type="text", text="Direct answer")]
 
-        with patch.object(self.generator.client.messages, 'create', return_value=mock_response):
+        with patch.object(self.generator.client.messages, "create", return_value=mock_response):
             result = self.generator.generate_response(
-                query="What is Python?",
-                tools=None,
-                tool_manager=None
+                query="What is Python?", tools=None, tool_manager=None
             )
 
         assert result == "Direct answer"
@@ -55,17 +51,12 @@ class TestAIGeneratorToolCalling:
         mock_response.content = [MockTextBlock(type="text", text="General knowledge answer")]
 
         tool_definitions = [
-            {
-                "name": "search_course_content",
-                "description": "Search course materials"
-            }
+            {"name": "search_course_content", "description": "Search course materials"}
         ]
 
-        with patch.object(self.generator.client.messages, 'create', return_value=mock_response):
+        with patch.object(self.generator.client.messages, "create", return_value=mock_response):
             result = self.generator.generate_response(
-                query="What is the capital of France?",
-                tools=tool_definitions,
-                tool_manager=None
+                query="What is the capital of France?", tools=tool_definitions, tool_manager=None
             )
 
         assert result == "General knowledge answer"
@@ -77,7 +68,7 @@ class TestAIGeneratorToolCalling:
             id="toolu_01",
             name="search_course_content",
             input={"query": "Python variables", "course_name": "Python"},
-            type="tool_use"
+            type="tool_use",
         )
 
         mock_initial_response = Mock()
@@ -94,16 +85,13 @@ class TestAIGeneratorToolCalling:
             "[Python Course - Lesson 1]\nVariables are used to store data..."
         )
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_initial_response, mock_final_response]
 
             result = self.generator.generate_response(
                 query="Tell me about variables in Python",
-                tools=[{
-                    "name": "search_course_content",
-                    "description": "Search course materials"
-                }],
-                tool_manager=mock_tool_manager
+                tools=[{"name": "search_course_content", "description": "Search course materials"}],
+                tool_manager=mock_tool_manager,
             )
 
         # Verify tool was executed
@@ -121,7 +109,7 @@ class TestAIGeneratorToolCalling:
             id="toolu_02",
             name="get_course_outline",
             input={"course_title": "Python"},
-            type="tool_use"
+            type="tool_use",
         )
 
         mock_initial_response = Mock()
@@ -129,29 +117,27 @@ class TestAIGeneratorToolCalling:
         mock_initial_response.content = [mock_tool_use]
 
         mock_final_response = Mock()
-        mock_final_response.content = [MockTextBlock(type="text", text="Here is the course outline...")]
+        mock_final_response.content = [
+            MockTextBlock(type="text", text="Here is the course outline...")
+        ]
 
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.return_value = (
             "Course: Python\nLink: http://example.com\nLessons (5 total):\n  Lesson 1: Intro..."
         )
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_initial_response, mock_final_response]
 
             result = self.generator.generate_response(
                 query="Show me the outline of the Python course",
-                tools=[{
-                    "name": "get_course_outline",
-                    "description": "Get course outline"
-                }],
-                tool_manager=mock_tool_manager
+                tools=[{"name": "get_course_outline", "description": "Get course outline"}],
+                tool_manager=mock_tool_manager,
             )
 
         # Verify outline tool was executed
         mock_tool_manager.execute_tool.assert_called_once_with(
-            "get_course_outline",
-            course_title="Python"
+            "get_course_outline", course_title="Python"
         )
 
         assert "outline" in result.lower()
@@ -162,12 +148,14 @@ class TestAIGeneratorToolCalling:
         mock_response.stop_reason = "end_turn"
         mock_response.content = [MockTextBlock(type="text", text="Follow-up answer")]
 
-        with patch.object(self.generator.client.messages, 'create', return_value=mock_response) as mock_create:
+        with patch.object(
+            self.generator.client.messages, "create", return_value=mock_response
+        ) as mock_create:
             result = self.generator.generate_response(
                 query="What about lists?",
                 conversation_history="User: What is Python?\nAI: Python is a language",
                 tools=None,
-                tool_manager=None
+                tool_manager=None,
             )
 
         # Verify system prompt includes history
@@ -180,10 +168,7 @@ class TestAIGeneratorToolCalling:
     def test_generate_response_tool_execution_error(self):
         """Test tool execution errors are handled gracefully"""
         mock_tool_use = MockToolUseBlock(
-            id="toolu_03",
-            name="search_course_content",
-            input={"query": "test"},
-            type="tool_use"
+            id="toolu_03", name="search_course_content", input={"query": "test"}, type="tool_use"
         )
 
         mock_initial_response = Mock()
@@ -192,18 +177,20 @@ class TestAIGeneratorToolCalling:
 
         # Claude should respond even with tool error
         mock_final_response = Mock()
-        mock_final_response.content = [MockTextBlock(type="text", text="I couldn't find that information.")]
+        mock_final_response.content = [
+            MockTextBlock(type="text", text="I couldn't find that information.")
+        ]
 
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.return_value = "Error: No course found"
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_initial_response, mock_final_response]
 
             result = self.generator.generate_response(
                 query="Find something",
                 tools=[{"name": "search_course_content", "description": "Search"}],
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
         # Verify tool result was passed to Claude
@@ -215,7 +202,9 @@ class TestAIGeneratorToolCalling:
         mock_response.stop_reason = "end_turn"
         mock_response.content = [MockTextBlock(type="text", text="Answer")]
 
-        with patch.object(self.generator.client.messages, 'create', return_value=mock_response) as mock_create:
+        with patch.object(
+            self.generator.client.messages, "create", return_value=mock_response
+        ) as mock_create:
             self.generator.generate_response(query="Test")
 
         call_kwargs = mock_create.call_args[1]
@@ -227,7 +216,9 @@ class TestAIGeneratorToolCalling:
         mock_response.stop_reason = "end_turn"
         mock_response.content = [MockTextBlock(type="text", text="Answer")]
 
-        with patch.object(self.generator.client.messages, 'create', return_value=mock_response) as mock_create:
+        with patch.object(
+            self.generator.client.messages, "create", return_value=mock_response
+        ) as mock_create:
             self.generator.generate_response(query="Test")
 
         call_kwargs = mock_create.call_args[1]
@@ -241,14 +232,14 @@ class TestAIGeneratorToolCalling:
 
         tool_definitions = [
             {"name": "search_course_content", "description": "Search"},
-            {"name": "get_course_outline", "description": "Get outline"}
+            {"name": "get_course_outline", "description": "Get outline"},
         ]
 
-        with patch.object(self.generator.client.messages, 'create', return_value=mock_response) as mock_create:
+        with patch.object(
+            self.generator.client.messages, "create", return_value=mock_response
+        ) as mock_create:
             self.generator.generate_response(
-                query="Test",
-                tools=tool_definitions,
-                tool_manager=None
+                query="Test", tools=tool_definitions, tool_manager=None
             )
 
         call_kwargs = mock_create.call_args[1]
@@ -265,10 +256,7 @@ class TestAIGeneratorIntegration:
 
     def setup_method(self):
         """Setup test fixtures"""
-        self.generator = AIGenerator(
-            api_key="test_key",
-            model="claude-sonnet-4-20250514"
-        )
+        self.generator = AIGenerator(api_key="test_key", model="claude-sonnet-4-20250514")
 
     def test_content_query_triggers_search_tool(self):
         """Test that content-related queries trigger the search tool"""
@@ -279,7 +267,7 @@ class TestAIGeneratorIntegration:
             id="toolu_01",
             name="search_course_content",
             input={"query": "functions and methods"},
-            type="tool_use"
+            type="tool_use",
         )
 
         mock_initial_response = Mock()
@@ -290,22 +278,28 @@ class TestAIGeneratorIntegration:
         mock_final_response.content = [MockTextBlock(type="text", text="Functions are...")]
 
         mock_tool_manager = Mock()
-        mock_tool_manager.execute_tool.return_value = "[Course - Lesson 5]\nFunctions are reusable blocks..."
+        mock_tool_manager.execute_tool.return_value = (
+            "[Course - Lesson 5]\nFunctions are reusable blocks..."
+        )
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_initial_response, mock_final_response]
 
             result = self.generator.generate_response(
                 query="Explain functions and methods in the course",
-                tools=[{
-                    "name": "search_course_content",
-                    "description": "Search course materials with semantic course name matching"
-                }],
-                tool_manager=mock_tool_manager
+                tools=[
+                    {
+                        "name": "search_course_content",
+                        "description": "Search course materials with semantic course name matching",
+                    }
+                ],
+                tool_manager=mock_tool_manager,
             )
 
         # Critical assertion: Verify the tool was called
-        assert mock_tool_manager.execute_tool.called, "Tool should have been called for content query"
+        assert (
+            mock_tool_manager.execute_tool.called
+        ), "Tool should have been called for content query"
 
     def test_outline_query_triggers_outline_tool(self):
         """Test that outline-related queries trigger the outline tool"""
@@ -313,7 +307,7 @@ class TestAIGeneratorIntegration:
             id="toolu_02",
             name="get_course_outline",
             input={"course_title": "Python"},
-            type="tool_use"
+            type="tool_use",
         )
 
         mock_initial_response = Mock()
@@ -326,22 +320,18 @@ class TestAIGeneratorIntegration:
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.return_value = "Course: Python\n\nLessons (5 total):"
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_initial_response, mock_final_response]
 
             result = self.generator.generate_response(
                 query="What lessons are in the Python course?",
-                tools=[{
-                    "name": "get_course_outline",
-                    "description": "Get course outline"
-                }],
-                tool_manager=mock_tool_manager
+                tools=[{"name": "get_course_outline", "description": "Get course outline"}],
+                tool_manager=mock_tool_manager,
             )
 
         # Critical assertion: Verify the outline tool was called
         mock_tool_manager.execute_tool.assert_called_once_with(
-            "get_course_outline",
-            course_title="Python"
+            "get_course_outline", course_title="Python"
         )
 
 
@@ -350,10 +340,7 @@ class TestSequentialToolCalling:
 
     def setup_method(self):
         """Setup test fixtures"""
-        self.generator = AIGenerator(
-            api_key="test_key",
-            model="claude-sonnet-4-20250514"
-        )
+        self.generator = AIGenerator(api_key="test_key", model="claude-sonnet-4-20250514")
 
     def test_two_round_sequential_tool_calls(self):
         """Test successful 2-round sequential tool calling"""
@@ -362,7 +349,7 @@ class TestSequentialToolCalling:
             id="toolu_01",
             name="search_course_content",
             input={"query": "Python variables"},
-            type="tool_use"
+            type="tool_use",
         )
 
         mock_response_1 = Mock()
@@ -374,7 +361,7 @@ class TestSequentialToolCalling:
             id="toolu_02",
             name="get_course_outline",
             input={"course_title": "Python"},
-            type="tool_use"
+            type="tool_use",
         )
 
         mock_response_2 = Mock()
@@ -388,19 +375,16 @@ class TestSequentialToolCalling:
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.side_effect = [
             "[Python Course]\nVariables are...",
-            "Course: Python\nLessons (10 total):..."
+            "Course: Python\nLessons (10 total):...",
         ]
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_response_1, mock_response_2, mock_final_response]
 
             result = self.generator.generate_response(
                 query="Compare variables in Python course with its outline",
-                tools=[{
-                    "name": "search_course_content",
-                    "description": "Search course materials"
-                }],
-                tool_manager=mock_tool_manager
+                tools=[{"name": "search_course_content", "description": "Search course materials"}],
+                tool_manager=mock_tool_manager,
             )
 
         # Verify 3 API calls (round 1, round 2, final)
@@ -429,14 +413,19 @@ class TestSequentialToolCalling:
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.return_value = "Result"
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             # Should only make 4 calls: 2 tool rounds + 1 initial + 1 final
-            mock_create.side_effect = [mock_response_1, mock_response_2, mock_response_3, mock_final_response]
+            mock_create.side_effect = [
+                mock_response_1,
+                mock_response_2,
+                mock_response_3,
+                mock_final_response,
+            ]
 
             result = self.generator.generate_response(
                 query="Test",
                 tools=[{"name": "search", "description": "Search"}],
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
         # Verify max 2 rounds enforced (4 calls: initial + round1 + round2 + final)
@@ -445,12 +434,7 @@ class TestSequentialToolCalling:
     def test_early_termination_no_tool_use(self):
         """Test early termination when Claude doesn't use tools in second round"""
         # Round 1: Tool use
-        mock_tool_use = MockToolUseBlock(
-            id="toolu_01",
-            name="search",
-            input={},
-            type="tool_use"
-        )
+        mock_tool_use = MockToolUseBlock(id="toolu_01", name="search", input={}, type="tool_use")
 
         mock_response_1 = Mock()
         mock_response_1.stop_reason = "tool_use"
@@ -464,13 +448,13 @@ class TestSequentialToolCalling:
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.return_value = "Search results"
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_response_1, mock_response_2]
 
             result = self.generator.generate_response(
                 query="Test",
                 tools=[{"name": "search", "description": "Search"}],
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
         # Verify only 2 API calls (round 1 + early termination)
@@ -479,26 +463,23 @@ class TestSequentialToolCalling:
 
     def test_message_history_preserved_across_rounds(self):
         """Test that message history accumulates correctly across 2 rounds"""
-        mock_tool_use = MockToolUseBlock(
-            id="toolu_01",
-            name="search",
-            input={},
-            type="tool_use"
-        )
+        mock_tool_use = MockToolUseBlock(id="toolu_01", name="search", input={}, type="tool_use")
 
         mock_response_1 = Mock(stop_reason="tool_use", content=[mock_tool_use])
-        mock_response_2 = Mock(stop_reason="end_turn", content=[MockTextBlock(type="text", text="Answer")])
+        mock_response_2 = Mock(
+            stop_reason="end_turn", content=[MockTextBlock(type="text", text="Answer")]
+        )
 
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.return_value = "Result"
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_response_1, mock_response_2]
 
             self.generator.generate_response(
                 query="Test query",
                 tools=[{"name": "search", "description": "Search"}],
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
         # Verify message history structure
@@ -516,12 +497,7 @@ class TestSequentialToolCalling:
 
     def test_tool_execution_error_stops_loop(self):
         """Test that tool execution errors are handled and stop the loop"""
-        mock_tool_use = MockToolUseBlock(
-            id="toolu_01",
-            name="search",
-            input={},
-            type="tool_use"
-        )
+        mock_tool_use = MockToolUseBlock(id="toolu_01", name="search", input={}, type="tool_use")
 
         mock_initial_response = Mock()
         mock_initial_response.stop_reason = "tool_use"
@@ -533,13 +509,13 @@ class TestSequentialToolCalling:
         mock_tool_manager = Mock()
         mock_tool_manager.execute_tool.side_effect = Exception("Tool failed")
 
-        with patch.object(self.generator.client.messages, 'create') as mock_create:
+        with patch.object(self.generator.client.messages, "create") as mock_create:
             mock_create.side_effect = [mock_initial_response, mock_final_response]
 
             result = self.generator.generate_response(
                 query="Test",
                 tools=[{"name": "search", "description": "Search"}],
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
         # Should make 2 calls (initial tool use + final with error)

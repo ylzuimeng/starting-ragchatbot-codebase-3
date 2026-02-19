@@ -3,10 +3,11 @@ Tests for RAG System to evaluate end-to-end query handling
 Tests the complete flow from query to response with sources
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-from rag_system import RAGSystem
 from config import Config
+from rag_system import RAGSystem
 
 
 class TestRAGSystemQueryFlow:
@@ -23,17 +24,22 @@ class TestRAGSystemQueryFlow:
         self.config.MAX_HISTORY = 2
         self.config.ZHIPUAI_API_KEY = "test_key"
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_query_success_with_search_results(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """Test successful query flow with search results"""
         # Setup mocks
@@ -76,17 +82,22 @@ class TestRAGSystemQueryFlow:
         assert len(sources) == 1
         assert sources[0]["text"] == "Python Course - Lesson 1"
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_query_with_session_id(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """Test query with existing session"""
         mock_vector_store = Mock()
@@ -118,22 +129,25 @@ class TestRAGSystemQueryFlow:
 
         # Verify exchange was added to history
         mock_session_mgr.add_exchange.assert_called_once_with(
-            "session_123",
-            "Follow-up question",
-            "Answer"
+            "session_123", "Follow-up question", "Answer"
         )
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_query_with_zero_results_bug(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """
         Test query behavior when vector store returns 0 results due to MAX_RESULTS=0 bug.
@@ -166,17 +180,22 @@ class TestRAGSystemQueryFlow:
         assert response == "No relevant content found."
         assert sources == []
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_query_with_multiple_sources(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """Test query returns multiple sources"""
         mock_vector_store = Mock()
@@ -195,7 +214,7 @@ class TestRAGSystemQueryFlow:
         mock_tool_mgr.get_last_sources.return_value = [
             {"text": "Python - Lesson 1", "link": "http://example.com/1"},
             {"text": "Python - Lesson 2", "link": "http://example.com/2"},
-            {"text": "Java - Lesson 3", "link": "http://example.com/3"}
+            {"text": "Java - Lesson 3", "link": "http://example.com/3"},
         ]
 
         # Create RAG system and query
@@ -208,17 +227,22 @@ class TestRAGSystemQueryFlow:
         assert sources[1]["text"] == "Python - Lesson 2"
         assert sources[2]["text"] == "Java - Lesson 3"
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_query_error_handling(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """Test error handling in query flow"""
         mock_vector_store = Mock()
@@ -241,17 +265,22 @@ class TestRAGSystemQueryFlow:
         with pytest.raises(Exception, match="API Error"):
             rag.query("Test query")
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_query_with_new_session(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """Test query creates new session when none provided"""
         mock_vector_store = Mock()
@@ -299,22 +328,22 @@ class TestRAGSystemConfiguration:
         bad_config.MAX_HISTORY = 2
         bad_config.ZHIPUAI_API_KEY = "test_key"
 
-        with patch('rag_system.VectorStore') as mock_vector_store_class:
+        with patch("rag_system.VectorStore") as mock_vector_store_class:
             # Track the call to VectorStore to verify max_results is passed
             mock_vector_store_class.return_value = Mock(max_results=0)
 
-            with patch('rag_system.AIGenerator') as mock_ai_generator:
+            with patch("rag_system.AIGenerator") as mock_ai_generator:
                 mock_ai = Mock()
                 mock_ai_generator.return_value = mock_ai
 
-                with patch('rag_system.SessionManager') as mock_session_manager:
+                with patch("rag_system.SessionManager") as mock_session_manager:
                     mock_session_mgr = Mock()
                     mock_session_manager.return_value = mock_session_mgr
 
-                    with patch('rag_system.DocumentProcessor'):
-                        with patch('rag_system.CourseSearchTool'):
-                            with patch('rag_system.CourseOutlineTool'):
-                                with patch('rag_system.ToolManager') as mock_tool_manager:
+                    with patch("rag_system.DocumentProcessor"):
+                        with patch("rag_system.CourseSearchTool"):
+                            with patch("rag_system.CourseOutlineTool"):
+                                with patch("rag_system.ToolManager") as mock_tool_manager:
                                     mock_tool_mgr = Mock()
                                     mock_tool_manager.return_value = mock_tool_mgr
                                     mock_tool_mgr.get_tool_definitions.return_value = []
@@ -329,8 +358,9 @@ class TestRAGSystemConfiguration:
                                     # Verify the call was made with max_results=0
                                     mock_vector_store_class.assert_called_once()
                                     call_kwargs = mock_vector_store_class.call_args[1]
-                                    assert call_kwargs["max_results"] == 0, \
-                                        "VectorStore should be called with max_results=0 from config"
+                                    assert (
+                                        call_kwargs["max_results"] == 0
+                                    ), "VectorStore should be called with max_results=0 from config"
 
     def test_vector_store_max_results_propagation(self):
         """Test that MAX_RESULTS from config propagates to VectorStore"""
@@ -342,18 +372,18 @@ class TestRAGSystemConfiguration:
         test_config.MAX_HISTORY = 2
         test_config.ZHIPUAI_API_KEY = "test_key"
 
-        with patch('rag_system.AIGenerator'):
-            with patch('rag_system.SessionManager'):
-                with patch('rag_system.DocumentProcessor'):
-                    with patch('rag_system.CourseSearchTool'):
-                        with patch('rag_system.CourseOutlineTool'):
-                            with patch('rag_system.ToolManager') as mock_tool_manager:
+        with patch("rag_system.AIGenerator"):
+            with patch("rag_system.SessionManager"):
+                with patch("rag_system.DocumentProcessor"):
+                    with patch("rag_system.CourseSearchTool"):
+                        with patch("rag_system.CourseOutlineTool"):
+                            with patch("rag_system.ToolManager") as mock_tool_manager:
                                 mock_tool_mgr = Mock()
                                 mock_tool_manager.return_value = mock_tool_mgr
                                 mock_tool_mgr.get_tool_definitions.return_value = []
                                 mock_tool_mgr.get_last_sources.return_value = []
 
-                                with patch('rag_system.VectorStore') as mock_vector_store_class:
+                                with patch("rag_system.VectorStore") as mock_vector_store_class:
                                     mock_vector_store = Mock()
                                     mock_vector_store_class.return_value = mock_vector_store
 
@@ -382,17 +412,22 @@ class TestRAGSystemInitialization:
         self.config.ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
         self.config.ANTHROPIC_BASE_URL = None
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_tools_registered_on_init(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """Test that search and outline tools are registered on initialization"""
         # Setup mocks
@@ -427,17 +462,22 @@ class TestRAGSystemInitialization:
         # Verify tools were registered
         assert mock_tool_mgr.register_tool.call_count == 2
 
-    @patch('rag_system.VectorStore')
-    @patch('rag_system.AIGenerator')
-    @patch('rag_system.SessionManager')
-    @patch('rag_system.DocumentProcessor')
-    @patch('rag_system.CourseSearchTool')
-    @patch('rag_system.CourseOutlineTool')
-    @patch('rag_system.ToolManager')
+    @patch("rag_system.VectorStore")
+    @patch("rag_system.AIGenerator")
+    @patch("rag_system.SessionManager")
+    @patch("rag_system.DocumentProcessor")
+    @patch("rag_system.CourseSearchTool")
+    @patch("rag_system.CourseOutlineTool")
+    @patch("rag_system.ToolManager")
     def test_anthropic_base_url_passed_when_configured(
-        self, mock_tool_manager, mock_outline_tool, mock_search_tool,
-        mock_doc_processor, mock_session_manager, mock_ai_generator,
-        mock_vector_store_class
+        self,
+        mock_tool_manager,
+        mock_outline_tool,
+        mock_search_tool,
+        mock_doc_processor,
+        mock_session_manager,
+        mock_ai_generator,
+        mock_vector_store_class,
     ):
         """Test that custom Anthropic base URL is passed when configured"""
         # Configure with custom base URL
