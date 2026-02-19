@@ -25,6 +25,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
     "black>=24.0.0",
     "isort>=5.13.0",
     "ruff>=0.8.0",
@@ -77,3 +79,38 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "backend/tests/*" = ["F"]  # Less strict for tests
+
+[tool.pytest.ini_options]
+# Pytest configuration for RAG system tests
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Output formatting
+addopts = [
+    "-v",                    # Verbose output
+    "--strict-markers",      # Error on unknown markers
+    "--tb=short",            # Shorter traceback format
+    "--color=yes",           # Colored output
+    "-p", "no:warnings",     # Suppress warnings during test runs
+]
+
+# Markers for organizing tests
+markers = [
+    "unit: Unit tests (fast, isolated component tests)",
+    "integration: Integration tests (slower, multiple components)",
+    "api: API endpoint tests",
+    "auth: Authentication and authorization tests",
+    "slow: Slow tests (network calls, database operations)",
+]
+
+# Asyncio configuration
+asyncio_mode = "auto"
+
+# Coverage options (if using pytest-cov)
+# addopts = ["--cov=backend", "--cov-report=term-missing"]
+
+# Logging configuration
+log_cli = false
+log_cli_level = "INFO"
